@@ -30,7 +30,7 @@ class Generator {
    * @param particleSpacing
    */
   template <class Particle, class ParticleCell>
-  static void cubeGrid(autopas::AutoPas<Particle, ParticleCell> &autopas, const CubeGrid &object);
+  static void cubeGrid(autopas::AutoPas<Particle> &autopas, const CubeGrid &object);
 
   /**
    * Fills Autopas Object with Particles with Gauss distribution
@@ -41,7 +41,7 @@ class Generator {
    * @param distributionStdDev
    */
   template <class Particle, class ParticleCell>
-  static void cubeGauss(autopas::AutoPas<Particle, ParticleCell> &autopas, const CubeGauss &object);
+  static void cubeGauss(autopas::AutoPas<Particle> &autopas, const CubeGauss &object);
 
   /**
    * Fills Autopas Object randomly with Particles
@@ -50,7 +50,7 @@ class Generator {
    * @param numParticles
    */
   template <class Particle, class ParticleCell>
-  static void cubeRandom(autopas::AutoPas<Particle, ParticleCell> &autopas, const CubeUniform &object);
+  static void cubeRandom(autopas::AutoPas<Particle> &autopas, const CubeUniform &object);
 
   /**
    * Generates a Sphere with @param radius number of Particles with initial @param velocity
@@ -62,11 +62,11 @@ class Generator {
    * @param id
    */
   template <class Particle, class ParticleCell>
-  static void sphere(autopas::AutoPas<Particle, ParticleCell> &autopas, const Sphere &object);
+  static void sphere(autopas::AutoPas<Particle> &autopas, const Sphere &object);
 };
 
 template <class Particle, class ParticleCell>
-void Generator::cubeGrid(autopas::AutoPas<Particle, ParticleCell> &autopas, const CubeGrid &object) {
+void Generator::cubeGrid(autopas::AutoPas<Particle> &autopas, const CubeGrid &object) {
   Particle dummyParticle;
   dummyParticle.setV(object.getVelocity());
   dummyParticle.setID(autopas.getNumberOfParticles());
@@ -77,7 +77,7 @@ void Generator::cubeGrid(autopas::AutoPas<Particle, ParticleCell> &autopas, cons
 }
 
 template <class Particle, class ParticleCell>
-void Generator::cubeGauss(autopas::AutoPas<Particle, ParticleCell> &autopas, const CubeGauss &object) {
+void Generator::cubeGauss(autopas::AutoPas<Particle> &autopas, const CubeGauss &object) {
   Particle dummyParticle;
   dummyParticle.setV(object.getVelocity());
   dummyParticle.setID(autopas.getNumberOfParticles());
@@ -88,7 +88,7 @@ void Generator::cubeGauss(autopas::AutoPas<Particle, ParticleCell> &autopas, con
 }
 
 template <class Particle, class ParticleCell>
-void Generator::cubeRandom(autopas::AutoPas<Particle, ParticleCell> &autopas, const CubeUniform &object) {
+void Generator::cubeRandom(autopas::AutoPas<Particle> &autopas, const CubeUniform &object) {
   Particle dummyParticle;
   dummyParticle.setV(object.getVelocity());
   dummyParticle.setTypeId(object.getTypeId());
@@ -98,7 +98,7 @@ void Generator::cubeRandom(autopas::AutoPas<Particle, ParticleCell> &autopas, co
 }
 
 template <class Particle, class ParticleCell>
-void Generator::sphere(autopas::AutoPas<Particle, ParticleCell> &autopas, const Sphere &object) {
+void Generator::sphere(autopas::AutoPas<Particle> &autopas, const Sphere &object) {
   Particle dummyParticle({0, 0, 0}, object.getVelocity(), autopas.getNumberOfParticles(), object.getTypeId());
   object.iteratePositions([&](auto pos) {
     dummyParticle.setR(pos);

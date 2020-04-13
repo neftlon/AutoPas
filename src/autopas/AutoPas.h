@@ -33,7 +33,7 @@ static unsigned int _instanceCounter = 0;
  * @tparam Particle Class for particles
  * @tparam ParticleCell Class for the particle cells
  */
-template <class Particle, class ParticleCell>
+template <class Particle>
 class AutoPas {
  public:
   /**
@@ -44,7 +44,7 @@ class AutoPas {
   /**
    * Particle Cell type to be accessible after initialization.
    */
-  using ParticleCell_t = ParticleCell;
+  using ParticleCell_t = FullParticleCell<Particle>;
 
   /**
    * Define the iterator_t for simple use, also from the outside.
@@ -120,14 +120,14 @@ class AutoPas {
    *
    */
   void init() {
-    _autoTuner = std::make_unique<autopas::AutoTuner<Particle, ParticleCell>>(
+    _autoTuner = std::make_unique<autopas::AutoTuner<Particle, ParticleCell_t>>(
         _boxMin, _boxMax, _cutoff, _verletSkin, _verletClusterSize,
         std::move(TuningStrategyFactory::generateTuningStrategy(
             _tuningStrategyOption, _allowedContainers, *_allowedCellSizeFactors, _allowedTraversals,
             _allowedDataLayouts, _allowedNewton3Options, _maxEvidence, _acquisitionFunctionOption)),
         _selectorStrategy, _tuningInterval, _numSamples);
     _logicHandler =
-        std::make_unique<autopas::LogicHandler<Particle, ParticleCell>>(*(_autoTuner.get()), _verletRebuildFrequency);
+        std::make_unique<autopas::LogicHandler<Particle, ParticleCell_t>>(*(_autoTuner.get()), _verletRebuildFrequency);
   }
 
   /**
@@ -197,7 +197,7 @@ class AutoPas {
    */
   template <class Functor>
   bool iteratePairwise(Functor *f) {
-    static_assert(not std::is_same<Functor, autopas::Functor<Particle, ParticleCell>>::value,
+    static_assert(not std::is_same<Functor, autopas::Functor<Particle, ParticleCell_t>>::value,
                   "The static type of Functor in iteratePairwise is not allowed to be autopas::Functor. Please use the "
                   "derived type instead, e.g. by using a dynamic_cast.");
     if (f->getCutoff() > this->getCutoff()) {
@@ -621,11 +621,11 @@ class AutoPas {
   /**
    * LogicHandler of autopas.
    */
-  std::unique_ptr<autopas::LogicHandler<Particle, ParticleCell>> _logicHandler;
+  std::unique_ptr<autopas::LogicHandler<Particle, ParticleCell_t>> _logicHandler;
 
   /**
    * This is the AutoTuner that owns the container, ...
    */
-  std::unique_ptr<autopas::AutoTuner<Particle, ParticleCell>> _autoTuner;
+  std::unique_ptr<autopas::AutoTuner<Particle, ParticleCell_t>> _autoTuner;
 };  // class AutoPas
 }  // namespace autopas

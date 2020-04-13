@@ -142,7 +142,7 @@ class Simulation {
   const std::unique_ptr<ParticlePropertiesLibrary<double, size_t>> &getPpl() const;
 
  private:
-  using AutoPasType = autopas::AutoPas<Particle, ParticleCell>;
+  using AutoPasType = autopas::AutoPas<Particle>;
   using ParticlePropertiesLibraryType = ParticlePropertiesLibrary<double, size_t>;
   constexpr static bool _shifting = true;
   constexpr static bool _mixing = true;
