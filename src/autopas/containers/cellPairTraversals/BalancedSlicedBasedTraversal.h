@@ -77,6 +77,11 @@ class BalancedSlicedBasedTraversal : public SlicedBasedTraversal<ParticleCell, P
       auto load = this->_loadEstimator(this->_cellsPerDimension, lowerCorner, upperCorner);
       loads[x] = load;
     }
+    std::string loadsStr;
+    for (auto l : loads) {
+      loadsStr += std::to_string(l) + ", ";
+    }
+    AutoPasLog(debug, "estimated layer loads: [{}].", loadsStr);
     for (auto i = 1; i < loads.size(); i++) {
       loads[i] += loads[i - 1];
     }

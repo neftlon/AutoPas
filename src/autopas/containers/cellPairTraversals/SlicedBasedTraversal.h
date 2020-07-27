@@ -6,6 +6,7 @@
  */
 
 #pragma once
+#include <ctime>
 
 #include "autopas/containers/cellPairTraversals/CellPairTraversal.h"
 #include "autopas/utils/DataLayoutConverter.h"
@@ -265,7 +266,7 @@ void SlicedBasedTraversal<ParticleCell, PairwiseFunctor, dataLayout, useNewton3>
       if (slice != numSlices - 1 and dimSlice >= lastLayer - _overlapLongestAxis) {
         _locks[((slice + 1) * _overlapLongestAxis) - (lastLayer - dimSlice)].lock();
       }
-      iterationTimers[slice * timerSpacing].start();
+      std::clock_t c_start = std::clock();
       for (unsigned long dimMedium = 0; dimMedium < this->_cellsPerDimension[_dimsPerLength[1]] - overLapps23[0];
            ++dimMedium) {
         for (unsigned long dimShort = 0; dimShort < this->_cellsPerDimension[_dimsPerLength[2]] - overLapps23[1];
@@ -278,7 +279,7 @@ void SlicedBasedTraversal<ParticleCell, PairwiseFunctor, dataLayout, useNewton3>
           loopBody(idArray[0], idArray[1], idArray[2]);
         }
       }
-      layerTimes[dimSlice] = iterationTimers[slice * timerSpacing].stop();
+      layerTimes[dimSlice] = (std::clock() - c_start) * 1000000000 / CLOCKS_PER_SEC;
       iterationTimes[slice * doubleSpacing] += layerTimes[dimSlice];
       // at the end of the first layers release the lock
       if (slice > 0 and dimSlice < myStartArray[_dimsPerLength[0]] + _overlapLongestAxis) {

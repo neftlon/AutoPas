@@ -49,6 +49,8 @@ if (NOT CMAKE_BUILD_TYPE)
     )
 endif (NOT CMAKE_BUILD_TYPE)
 
+add_compile_options(-fno-omit-frame-pointer)
+
 # CUDA options
 option(AUTOPAS_ENABLE_CUDA "Activates Cuda Components" OFF)
 if (AUTOPAS_ENABLE_CUDA)
