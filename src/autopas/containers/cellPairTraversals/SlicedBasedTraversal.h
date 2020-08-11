@@ -223,6 +223,7 @@ void SlicedBasedTraversal<ParticleCell, PairwiseFunctor, dataLayout, useNewton3>
   std::vector<double> layerTimes;
   std::vector<utils::Timer> iterationTimers;
   std::vector<double> iterationTimes;
+  std::vector<std::tuple<int, unsigned long, unsigned long>> schedulingPoints;
 
   constexpr size_t cacheLineLength = 64;
   size_t timerSpacing = cacheLineLength / sizeof(utils::Timer) + 1;
@@ -233,6 +234,7 @@ void SlicedBasedTraversal<ParticleCell, PairwiseFunctor, dataLayout, useNewton3>
   iterationTimers.resize(numSlices * timerSpacing);
   iterationTimes.resize(numSlices * doubleSpacing);
   layerTimes.resize(this->_cellsPerDimension[_dimsPerLength[0]]);
+  schedulingPoints.resize(this->_cellsPerDimension[_dimsPerLength[0]]);
 
 #ifdef AUTOPAS_OPENMP
   // although every thread gets exactly one iteration (=slice) this is faster than a normal parallel region
@@ -242,6 +244,7 @@ void SlicedBasedTraversal<ParticleCell, PairwiseFunctor, dataLayout, useNewton3>
   } else {
     omp_set_schedule(omp_sched_static, 1);
   }
+  std::chrono::high_resolution_clock::time_point globalStart = std::chrono::high_resolution_clock::now();
 #pragma omp parallel for schedule(runtime) num_threads(numThreads)
 #endif
   for (size_t slice = 0; slice < numSlices; ++slice) {
@@ -266,7 +269,11 @@ void SlicedBasedTraversal<ParticleCell, PairwiseFunctor, dataLayout, useNewton3>
       if (slice != numSlices - 1 and dimSlice >= lastLayer - _overlapLongestAxis) {
         _locks[((slice + 1) * _overlapLongestAxis) - (lastLayer - dimSlice)].lock();
       }
-      std::clock_t c_start = std::clock();
+      // std::clock_t c_start = std::clock();
+      iterationTimers[slice * timerSpacing].start();
+      const auto layerStart =
+          std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - globalStart)
+              .count();
       for (unsigned long dimMedium = 0; dimMedium < this->_cellsPerDimension[_dimsPerLength[1]] - overLapps23[0];
            ++dimMedium) {
         for (unsigned long dimShort = 0; dimShort < this->_cellsPerDimension[_dimsPerLength[2]] - overLapps23[1];
@@ -275,11 +282,17 @@ void SlicedBasedTraversal<ParticleCell, PairwiseFunctor, dataLayout, useNewton3>
           idArray[_dimsPerLength[0]] = dimSlice;
           idArray[_dimsPerLength[1]] = dimMedium;
           idArray[_dimsPerLength[2]] = dimShort;
-
           loopBody(idArray[0], idArray[1], idArray[2]);
         }
       }
-      layerTimes[dimSlice] = (std::clock() - c_start) * 1000000000 / CLOCKS_PER_SEC;
+      const auto layerEnd =
+          std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - globalStart)
+              .count();
+
+      schedulingPoints[dimSlice] = std::make_tuple(omp_get_thread_num(), layerStart, layerEnd);
+
+      // layerTimes[dimSlice] = (std::clock() - c_start) * 1000000000 / CLOCKS_PER_SEC;
+      layerTimes[dimSlice] = iterationTimers[slice * timerSpacing].stop();
       iterationTimes[slice * doubleSpacing] += layerTimes[dimSlice];
       // at the end of the first layers release the lock
       if (slice > 0 and dimSlice < myStartArray[_dimsPerLength[0]] + _overlapLongestAxis) {
@@ -330,6 +343,17 @@ void SlicedBasedTraversal<ParticleCell, PairwiseFunctor, dataLayout, useNewton3>
   AutoPasLog(debug, "Difference between longest and shortest time: {:.3G}", *minMax.second - *minMax.first);
   AutoPasLog(debug, "Ratio between longest and shortest time: {:.3G}", (float)*minMax.second / *minMax.first);
   AutoPasLog(debug, "avg: {:.3G}, std-deviation: {:.3G} ({:.3G}%)", avg, stddev, 100 * stddev / avg);
+
+  for (int slice = 0, sliceStart = 0; slice < numSlices; sliceStart += _sliceThickness[slice++]) {
+    for (int layerOffset = 0; layerOffset < _sliceThickness[slice]; layerOffset++) {
+      auto layer = sliceStart + layerOffset;
+      auto thread = std::get<0>(schedulingPoints[layer]);
+      auto start = std::get<1>(schedulingPoints[layer]);
+      auto end = std::get<2>(schedulingPoints[layer]);
+      AutoPasLog(debug, "Scheduling Point: {{ slice: {}, layer: {}, thread: {}, start: {}, end: {} }}", slice, layer,
+                 thread, start, end);
+    }
+  }
 }
 
 }  // namespace autopas
