@@ -31,9 +31,6 @@ enum class FunctorN3Modes {
   Both,
 };
 
-template <class Particle>
-class VerletListHelpers;
-
 namespace internal {
 /**
  * Dummy class to provide empty arrays.
@@ -391,5 +388,3 @@ class Functor {
 };
 
 }  // namespace autopas
-
-#include "autopas/containers/verletListsCellBased/verletLists/VerletListHelpers.h"
