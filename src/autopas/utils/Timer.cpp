@@ -12,8 +12,6 @@ using namespace std::chrono;
 
 autopas::utils::Timer::Timer() : _startTime{} {}
 
-autopas::utils::Timer::~Timer() = default;
-
 void autopas::utils::Timer::start() {
   if (_currentlyRunning) {
     autopas::utils::ExceptionHandler::exception("Trying to start a timer that is already started!");

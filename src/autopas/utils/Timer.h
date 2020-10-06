@@ -18,10 +18,8 @@ class Timer {
  public:
   Timer();
 
-  virtual ~Timer();
-
   /**
-   * start the timer.
+   * Start the timer.
    */
   void start();
 
@@ -59,5 +57,9 @@ class Timer {
    * Indicator if this timer currently is measuring.
    */
   bool _currentlyRunning = false;
+
+  double __remainingTo64[(64 - 3 * sizeof(long)) / sizeof(long)];
+  // make sure of the size of AoSThreadData
 };
+  static_assert(sizeof(Timer) % 64 == 0, "Timer has wrong size");
 }  // namespace autopas::utils
