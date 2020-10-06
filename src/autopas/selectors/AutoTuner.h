@@ -339,13 +339,9 @@ void AutoTuner<Particle, ParticleCell>::iteratePairwiseTemplateHelper(PairwiseFu
 
   autopas::utils::Timer timerTotal;
   autopas::utils::Timer timerRebuild;
-  autopas::utils::Timer timerInitTraversal;
-  autopas::utils::Timer timerEndTraversal;
   timerTotal.start();
 
-  timerInitTraversal.start();
   f->initTraversal();
-  timerInitTraversal.stop();
 
   if (doListRebuild) {
     timerRebuild.start();
@@ -354,9 +350,7 @@ void AutoTuner<Particle, ParticleCell>::iteratePairwiseTemplateHelper(PairwiseFu
   }
   containerPtr->iteratePairwise(traversal.get());
 
-  timerEndTraversal.start();
   f->endTraversal(useNewton3);
-  timerEndTraversal.stop();
 
   auto runtimeTotal = timerTotal.stop();
 
@@ -364,8 +358,6 @@ void AutoTuner<Particle, ParticleCell>::iteratePairwiseTemplateHelper(PairwiseFu
     AutoPasLog(debug, "rebuildNeighborLists took {} nanoseconds", timerRebuild.getTotalTime());
   }
 
-  AutoPasLog(debug, "InitTraversal        took {} nanoseconds", timerInitTraversal.getTotalTime());
-  AutoPasLog(debug, "EndTraversal         took {} nanoseconds", timerInitTraversal.getTotalTime());
   // TODO: this message shold only show the time for iteratePairwise and not the toal sum.
   AutoPasLog(debug, "IteratePairwise      took {} nanoseconds", runtimeTotal);
 

@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <autopas/utils/Timer.h>
+
 #include <type_traits>
 
 #include "autopas/cells/ParticleCell.h"
@@ -15,6 +17,7 @@
 #include "autopas/utils/CudaSoA.h"
 #include "autopas/utils/ExceptionHandler.h"
 #include "autopas/utils/SoAView.h"
+#include "autopas/utils/WrapOpenMP.h"
 
 #if defined(AUTOPAS_CUDA)
 #include "autopas/pairwiseFunctors/FunctorCuda.cuh"
@@ -76,9 +79,23 @@ class Functor {
    * Constructor
    * @param cutoff
    */
-  Functor(double cutoff) : _cutoff(cutoff){};
+  Functor(double cutoff) : _cutoff(cutoff), _timerSoALoader(autopas::autopas_get_max_threads()), _timerSoAExtractor(autopas::autopas_get_max_threads()){};
 
-  virtual ~Functor() = default;
+  virtual ~Functor() {
+
+    if (autopas::Logger::get()->level() <= autopas::Logger::LogLevel::debug) {
+      auto totalTimeSoALoader = 0ul;
+      auto totalTimeSoAExtractor = 0ul;
+
+      for (int i = 0; i < autopas_get_max_threads(); ++i) {
+        totalTimeSoALoader += _timerSoALoader[autopas_get_thread_num()].getTotalTime();
+        totalTimeSoAExtractor += _timerSoAExtractor[autopas_get_thread_num()].getTotalTime();
+      }
+
+      AutoPasLog(debug, "SoALoader            took {} nanoseconds", totalTimeSoALoader);
+      AutoPasLog(debug, "SoAExtractor         took {} nanoseconds", totalTimeSoAExtractor);
+    }
+  };
 
   /**
    * This function is called at the start of each traversal.
@@ -239,7 +256,13 @@ class Functor {
    * to the SoA with the specified offset.
    */
   virtual void SoALoader(ParticleCell<Particle> &cell, ::autopas::SoA<SoAArraysType> &soa, size_t offset) {
-    SoALoaderImpl(cell, soa, offset, std::make_index_sequence<Impl_t::getNeededAttr().size()>{});
+    if (autopas::Logger::get()->level() <= autopas::Logger::LogLevel::debug) {
+      _timerSoALoader[autopas_get_thread_num()].start();
+    }
+      SoALoaderImpl(cell, soa, offset, std::make_index_sequence<Impl_t::getNeededAttr().size()>{});
+    if (autopas::Logger::get()->level() <= autopas::Logger::LogLevel::debug) {
+        _timerSoALoader[autopas_get_thread_num()].stop();
+    }
   }
 
   /**
@@ -251,7 +274,13 @@ class Functor {
    * extracted starting at offset.
    */
   virtual void SoAExtractor(ParticleCell<Particle> &cell, ::autopas::SoA<SoAArraysType> &soa, size_t offset) {
+    if (autopas::Logger::get()->level() <= autopas::Logger::LogLevel::debug) {
+      _timerSoAExtractor[autopas_get_thread_num()].start();
+    }
     SoAExtractorImpl(cell, soa, offset, std::make_index_sequence<Impl_t::getComputedAttr().size()>{});
+    if (autopas::Logger::get()->level() <= autopas::Logger::LogLevel::debug) {
+      _timerSoAExtractor[autopas_get_thread_num()].stop();
+    }
   }
 
   /**
@@ -314,6 +343,8 @@ class Functor {
   double getCutoff() const { return _cutoff; }
 
  private:
+  std::vector<autopas::utils::Timer> _timerSoALoader;
+  std::vector<autopas::utils::Timer> _timerSoAExtractor;
   /**
    * Implements loading of SoA buffers.
    * @tparam cell_t Cell type.
