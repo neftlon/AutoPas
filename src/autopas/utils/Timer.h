@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include <chrono>
+#include <time.h>
+#include <vector>
 
 namespace autopas::utils {
 
@@ -21,14 +22,14 @@ class Timer {
   virtual ~Timer();
 
   /**
-   * start the timer.
+   * Start the timer.
    */
   void start();
 
   /**
    * Stops the timer and returns the time elapsed in nanoseconds since the last call to start.
    * It also adds the duration to the total time.
-   * @return elapsed time in nanoseconds
+   * @return Elapsed time in nanoseconds
    */
   long stop();
 
@@ -40,7 +41,7 @@ class Timer {
 
   /**
    * Get total accumulated time.
-   * @return Total time in nano seconds.
+   * @return Total time in nanoseconds.
    */
   [[nodiscard]] long getTotalTime() const { return _totalTime; }
 
@@ -48,10 +49,15 @@ class Timer {
   /**
    * Time point of last call of start().
    */
-  std::chrono::high_resolution_clock::time_point _startTime;
+  std::vector<struct timespec> _startTime;
 
   /**
-   * Accumulated total time.
+   * Helper time struct buffer.
+   */
+  std::vector<struct timespec> _tmpTime;
+
+  /**
+   * Accumulated total time in nanoseconds.
    */
   long _totalTime = 0;
 
