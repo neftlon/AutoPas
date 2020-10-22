@@ -6,6 +6,8 @@
 
 #include "utils/Timer.h"
 
+#include <x86intrin.h>
+
 #include "ExceptionHandler.h"
 #include "WrapOpenMP.h"
 
@@ -19,19 +21,19 @@ void autopas::utils::Timer::start() {
   }
   _currentlyRunning = true;
 #ifdef AUTOPAS_OPENMP
-#pragma omp parallel for schedule(static,1)
+#pragma omp parallel for schedule(static, 1)
 #endif
   for (size_t t = 0; t < autopas_get_num_threads(); ++t) {
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &_startTime[t]);
+    _startTime[t] = _rdtsc();
   }
 }
 
 long autopas::utils::Timer::stop() {
 #ifdef AUTOPAS_OPENMP
-#pragma omp parallel for schedule(static,1)
+#pragma omp parallel for schedule(static, 1)
 #endif
   for (size_t t = 0; t < autopas_get_num_threads(); ++t) {
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &_tmpTime[t]);
+    _tmpTime[t] = _rdtsc();
   }
 
   if (not _currentlyRunning) {
@@ -39,12 +41,9 @@ long autopas::utils::Timer::stop() {
   }
   _currentlyRunning = false;
 
-  constexpr unsigned long billion = 1000000000ul;
-
   long diff = std::numeric_limits<long>::max();
   for (size_t t = 0; t < autopas_get_num_threads(); ++t) {
-    const long diffT =
-        (_tmpTime[t].tv_sec - _startTime[t].tv_sec) * billion + (_tmpTime[t].tv_nsec - _startTime[t].tv_nsec);
+    const long diffT = _tmpTime[t] - _startTime[t];
     diff = std::min(diff, diffT);
   }
 

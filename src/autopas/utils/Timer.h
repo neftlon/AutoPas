@@ -8,6 +8,7 @@
 #pragma once
 
 #include <time.h>
+
 #include <vector>
 
 namespace autopas::utils {
@@ -49,12 +50,12 @@ class Timer {
   /**
    * Time point of last call of start().
    */
-  std::vector<struct timespec> _startTime;
+  std::vector<unsigned long long> _startTime;
 
   /**
    * Helper time struct buffer.
    */
-  std::vector<struct timespec> _tmpTime;
+  std::vector<unsigned long long> _tmpTime;
 
   /**
    * Accumulated total time in nanoseconds.
